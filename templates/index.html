@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Attività - {{ timezone }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .header-info {
+            font-size: 0.9em;
+            opacity: 0.9;
+            display: grid;
+            gap: 5px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .input-group {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        input, button {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        
+        input {
+            background: #f9f9f9;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #764ba2;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-buttons button {
+            flex: 1;
+            min-width: 150px;
+            padding: 10px;
+        }
+        
+        .tasks-list {
+            display: grid;
+            gap: 10px;
+        }
+        
+        .task-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s;
+        }
+        
+        .task-item:hover {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .task-item.completed {
+            opacity: 0.6;
+            border-left-color: #10b981;
+            background: #f0f9f6;
+        }
+        
+        .task-item.completed .task-description {
+            text-decoration: line-through;
+        }
+        
+        .task-info {
+            display: grid;
+            gap: 5px;
+        }
+        
+        .task-description {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .task-meta {
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .task-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        
+        .task-actions button {
+            padding: 8px 12px;
+            font-size: 0.9em;
+            min-width: auto;
+        }
+        
+        .btn-complete {
+            background: #10b981;
+        }
+        
+        .btn-complete:hover {
+            background: #059669;
+        }
+        
+        .btn-delete {
+            background: #ef4444;
+        }
+        
+        .btn-delete:hover {
+            background: #dc2626;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+        }
+        
+        .status {
+            padding: 12px 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            margin-top: 20px;
+            text-align: center;
+            color: #666;
+            border-left: 4px solid #667eea;
+        }
+        
+        .status.success {
+            background: #f0f9f6;
+            color: #10b981;
+            border-left-color: #10b981;
+        }
+        
+        .status.error {
+            background: #fef2f2;
+            color: #ef4444;
+            border-left-color: #ef4444;
+        }
+        
+        .status.loading {
+            background: #f0f4ff;
+            color: #667eea;
+            border-left-color: #667eea;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #667eea;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .task-count {
+            font-size: 0.9em;
+            color: #999;
+            margin-top: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .input-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .task-item {
+                grid-template-columns: 1fr;
+            }
+            
+            .task-actions {
+                justify-content: flex-start;
+            }
+            
+            .task-actions button {
+                flex: 1;
+                min-width: auto;
+            }
+            
+            .header h1 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Gestione Attività</h1>
+            <div class="header-info">
+                <div>Fuso orario: <strong>{{ timezone }}</strong></div>
+                <div id="current-time">Ora: {{ current_time }}</div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <!-- Sezione Aggiunta Attività -->
+            <div class="section">
+                <h2 class="section-title">➕ Aggiungi Nuova Attività</h2>
+                <div class="input-group">
+                    <input type="text" id="description" placeholder="Descrizione attività" maxlength="255">
+                    <input type="date" id="date" value="{{ today }}">
+                    <input type="time" id="time" placeholder="HH:MM">
+                    <button onclick="addTask()" id="btn-add">Aggiungi</button>
+                </div>
+            </div>
+            
+            <!-- Sezione Filtri -->
+            <div class="section">
+                <div class="filter-buttons">
+                    <button onclick="filterTasks('all')">📅 Tutte le attività</button>
+                    <button onclick="filterTasks('today')">📋 Attività di oggi</button>
+                    <button onclick="refreshTime()">🔄 Aggiorna ora</button>
+                </div>
+            </div>
+            
+            <!-- Sezione Attività -->
+            <div class="section">
+                <h2 class="section-title">✅ Le tue Attività</h2>
+                <div class="tasks-list" id="tasks-list">
+                    <p class="empty-state">⏳ Caricamento attività...</p>
+                </div>
+                <div class="task-count" id="task-count"></div>
+            </div>
+            
+            <div class="status" id="status">✨ Pronto</div>
+        </div>
+    </div>
+    
+    <script>
+        let currentFilter = 'all';
+        
+        function setStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+        
+        function updateCurrentTime() {
+            fetch('/api/time')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('current-time').textContent = `Ora: ${data.time}`;
+                })
+                .catch(e => console.error('Errore aggiornamento ora:', e));
+        }
+        
+        function refreshTime() {
+            updateCurrentTime();
+            loadTasks();
+        }
+        
+        async function loadTasks(filter = 'all') {
+            try {
+                setStatus('<span class="spinner"></span>Caricamento...', 'loading');
+                const response = await fetch(`/api/tasks?filter=${filter}`);
+                const tasks = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(tasks.error || 'Errore sconosciuto');
+                }
+                
+                const listDiv = document.getElementById('tasks-list');
+                const countDiv = document.getElementById('task-count');
+                
+                if (tasks.length === 0) {
+                    listDiv.innerHTML = '<p class="empty-state">📭 Nessuna attività</p>';
+                    countDiv.textContent = '';
+                    return;
+                }
+                
+                listDiv.innerHTML = tasks.map(task => `
+                    <div class="task-item ${task.completed ? 'completed' : ''}">
+                        <div class="task-info">
+                            <div class="task-description">${escapeHtml(task.description)}</div>
+                            <div class="task-meta">📅 ${task.date} ⏰ ${task.time}</div>
+                        </div>
+                        <div class="task-actions">
+                            ${!task.completed ? `<button class="btn-complete" onclick="completeTask(${task.id})">✅ Completa</button>` : ''}
+                            <button class="btn-delete" onclick="deleteTask(${task.id})">🗑️ Elimina</button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                countDiv.textContent = `${tasks.length} ${tasks.length === 1 ? 'attività' : 'attività'}`;
+                setStatus('✨ Pronto', 'info');
+            } catch (error) {
+                console.error('Errore:', error);
+                setStatus(`❌ ${error.message}`, 'error');
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        async function addTask() {
+            const description = document.getElementById('description').value.trim();
+            const date = document.getElementById('date').value;
+            const time = document.getElementById('time').value;
+            
+            if (!description || !date || !time) {
+                setStatus('❌ Compila tutti i campi!', 'error');
+                return;
+            }
+            
+            try {
+                document.getElementById('btn-add').disabled = true;
+                setStatus('<span class="spinner"></span>Aggiunta...', 'loading');
+                
+                const response = await fetch('/api/tasks', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({description, date, time})
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Errore nell\'aggiunta');
+                }
+                
+                document.getElementById('description').value = '';
+                document.getElementById('time').value = '';
+                setStatus('✅ Attività aggiunta!', 'success');
+                loadTasks(currentFilter);
+            } catch (error) {
+                console.error('Errore:', error);
+                setStatus(`❌ ${error.message}`, 'error');
+            } finally {
+                document.getElementById('btn-add').disabled = false;
+            }
+        }
+        
+        async function completeTask(taskId) {
+            try {
+                setStatus('<span class="spinner"></span>Aggiornamento...', 'loading');
+                const response = await fetch(`/api/tasks/${taskId}/complete`, {method: 'PUT'});
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Errore');
+                }
+                
+                setStatus('✅ Attività completata!', 'success');
+                loadTasks(currentFilter);
+            } catch (error) {
+                console.error('Errore:', error);
+                setStatus(`❌ ${error.message}`, 'error');
+            }
+        }
+        
+        async function deleteTask(taskId) {
+            if (confirm('Sei sicuro di voler eliminare questa attività?')) {
+                try {
+                    setStatus('<span class="spinner"></span>Eliminazione...', 'loading');
+                    const response = await fetch(`/api/tasks/${taskId}`, {method: 'DELETE'});
+                    const result = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(result.error || 'Errore');
+                    }
+                    
+                    setStatus('🗑️ Attività eliminata!', 'success');
+                    loadTasks(currentFilter);
+                } catch (error) {
+                    console.error('Errore:', error);
+                    setStatus(`❌ ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        function filterTasks(filter) {
+            currentFilter = filter;
+            loadTasks(filter);
+        }
+        
+        // Carica attività al avvio
+        loadTasks();
+        updateCurrentTime();
+        setInterval(updateCurrentTime, 5000);
+    </script>
+</body>
+</html>
